@@ -35,8 +35,13 @@ class f1tenth
             sub = n.subscribe("/scan",1000,&f1tenth::race,this);   
         }
 
-        void race(sensor_msgs::LaserScan scan){
-            ackermann_msgs::AckermannDriveStamped drive;
+        void race(sensor_msgs::LaserScan scan);
+        void wallFollow(sensor_msgs::LaserScan scan, ackermann_msgs::AckermannDriveStamped drive);
+
+};
+
+void f1tenth::race(sensor_msgs::LaserScan scan){
+    ackermann_msgs::AckermannDriveStamped drive;
             
             // std::cout<<scan.ranges[810]<<std::endl;
             
@@ -57,13 +62,12 @@ class f1tenth
 
                 }
             }
-        }
-        
+}
 
-        void wallFollow(sensor_msgs::LaserScan scan, ackermann_msgs::AckermannDriveStamped drive){
+void f1tenth::wallFollow(sensor_msgs::LaserScan scan, ackermann_msgs::AckermannDriveStamped drive){
             
             float minLeft = 3;
-            for(int i=540;i<=860;i++){
+            for(int i=540;i<=950;i++){
                 if(scan.ranges[i]<minLeft){
                     minLeft=scan.ranges[i];
                 }
@@ -87,8 +91,6 @@ class f1tenth
 
 
             }
-        
-};
 
 int main(int argc, char **argv){
     ros::init(argc,argv,"lidarLap");
