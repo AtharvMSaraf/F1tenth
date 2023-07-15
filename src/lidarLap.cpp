@@ -1,9 +1,10 @@
 #include <ros/ros.h>
-#include "ackermann_msgs/AckermannDriveStamped.h"
+#include "ackermann_msgs/AckermannDriveStamped.h"   
 #include "sensor_msgs/LaserScan.h"
 #include <iostream>
 #include <stdio.h>
-#include <cmath>
+#include <math.h>
+#include "nav_msgs/Odometry.h"
 
 // using namespace std;
 
@@ -25,6 +26,7 @@ class f1tenth
         ros::NodeHandle n;
         ros::Publisher pub;
         ros::Subscriber sub;
+        ros::Subscriber sub2;
 
     public:
         f1tenth(){
@@ -32,25 +34,29 @@ class f1tenth
             pub = n.advertise<ackermann_msgs::AckermannDriveStamped>("drive",1000);
 
             //defining subscribers
-            sub = n.subscribe("/scan",1000,&f1tenth::race,this);   
+            sub = n.subscribe("/scan",1000,&f1tenth::race,this); 
+
+            // defining second subsriber
+            sub2 = n.subscribe("/odom",1000,&f1tenth::odomcallback,this);
+ 
         }
 
         void race(sensor_msgs::LaserScan scan);
         void wallFollow(sensor_msgs::LaserScan scan, ackermann_msgs::AckermannDriveStamped drive);
+        void odomcallback(nav_msgs::Odometry);
+        float velocity; 
 
 };
 
 void f1tenth::race(sensor_msgs::LaserScan scan){
     ackermann_msgs::AckermannDriveStamped drive;
             
-            // std::cout<<scan.ranges[810]<<std::endl;
-            
+            // std::cout<<"range= "<<scan.ranges[810]<<" ttc= "<<ttc<<std::endl;
+
+            // float ttc_min = INFINITY;
             for(int i=525;i<556;i++){
-                // if(scan.ranges[i]<0.4){
-                //     std::cout<<"The distance is"<<scan.ranges[525]<<"i mam breaking, speed = "<<drive.drive.speed<<std::endl;
-                //     drive.drive.speed-=0.01;
-                //     pub.publish(drive);
-                // }
+                float ttc= scan.ranges[i]/-(velocity*cos(2*3.14159265359*((i*0.333)/360)));
+                
                 if(scan.ranges[i]<0.5){
                     std::cout<<"emergency break applied"<<std::endl;
                     drive.drive.speed = 0;
@@ -58,7 +64,14 @@ void f1tenth::race(sensor_msgs::LaserScan scan){
                     pub.publish(drive);
                 }
                 else{
-                    wallFollow(scan,drive);
+                    if (ttc<8){
+                    drive.drive.speed= drive.drive.speed/2;
+                    std::cout<<"deaccelrating velocity = "<<velocity<<std::endl;
+                    pub.publish(drive);
+                }
+                    // wallFollow(scan,drive);
+                    drive.drive.speed = 0.5;
+                    pub.publish(drive);
 
                 }
             }
@@ -90,7 +103,14 @@ void f1tenth::wallFollow(sensor_msgs::LaserScan scan, ackermann_msgs::AckermannD
             pub.publish(drive);
 
 
-            }
+}
+
+void f1tenth::odomcallback(nav_msgs::Odometry odom){
+    std::cout<<"i am in odometry"<<std::endl;
+    velocity = odom.twist.twist.linear.x;
+    std::cout<<"velocity  = "<<velocity<<std::endl;
+    
+}
 
 int main(int argc, char **argv){
     ros::init(argc,argv,"lidarLap");

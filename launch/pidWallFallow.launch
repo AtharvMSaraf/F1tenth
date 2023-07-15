@@ -1,0 +1,7 @@
+<launch>
+    <include file="$(find f1tenth_simulator)/launch/simulator.launch"/>
+
+    Publishes the error on errorGeneradted topic
+    <node pkg="F1code" type="errorGen" name="errorGen"/>
+    <node pkg="F1code" type="pidControl" name="pidControl" />
+</launch>
